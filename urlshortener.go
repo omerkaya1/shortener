@@ -1,12 +1,10 @@
 package url_shortener
 
 import (
+	"crypto/md5"
 	"fmt"
-	"math/rand"
 	"net/url"
 )
-
-const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 var urlShortener URLShortener
 
@@ -31,7 +29,7 @@ func GetURLShortener() URLShortener {
 func (us URLShortenerImpl) Shorten(longURL string) string {
 	retURL, err := us.addToKnown(longURL)
 	if err != nil {
-		fmt.Printf("failure: %v\n", err)
+		fmt.Printf("failure: %v", err)
 	}
 	return fmt.Sprintf("%s", retURL)
 }
@@ -50,13 +48,18 @@ func (us URLShortenerImpl) addToKnown(rawUrl string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	shortenedPath := generateShortURL()
+
+	if len(u.Path) == 0 {
+		return "", fmt.Errorf("the provided URL has no path part to shorten")
+	}
+
 	if _, exist := us.alreadyExist(rawUrl); !exist {
+		shortenedPath := generateShortURL(rawUrl)
 		shortURL := fmt.Sprintf("%s://%s/%s", u.Scheme, u.Host, shortenedPath)
 		us[rawUrl] = shortURL
 		return shortURL, nil
 	} else {
-		return "", fmt.Errorf("URL %s was already shortened\n", rawUrl)
+		return "", fmt.Errorf("URL %s was already shortened", rawUrl)
 	}
 }
 
@@ -68,10 +71,6 @@ func (us URLShortenerImpl) alreadyExist(url string) (string, bool) {
 	}
 }
 
-func generateShortURL() string {
-	short := make([]byte, 10)
-	for i := range short {
-		short[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(short)
+func generateShortURL(long string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(long)))
 }
