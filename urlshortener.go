@@ -11,8 +11,6 @@ var urlShortener URLShortener
 type URLShortener interface {
 	Shorten(string) string
 	Resolve(string) string
-	addToKnown(string) (string, error)
-	alreadyExist(string) (string, bool)
 }
 
 type URLShortenerImpl map[string]string
@@ -27,11 +25,23 @@ func GetURLShortener() URLShortener {
 }
 
 func (us URLShortenerImpl) Shorten(longURL string) string {
-	retURL, err := us.addToKnown(longURL)
+	u, err := url.Parse(longURL)
 	if err != nil {
-		fmt.Printf("failure: %v", err)
+		return ""
 	}
-	return fmt.Sprintf("%s", retURL)
+
+	if len(u.Path) == 0 {
+		return ""
+	}
+
+	if _, exist := us[longURL]; !exist {
+		shortenedPath := generateShortURL(longURL)
+		shortURL := fmt.Sprintf("%s://%s/%s", u.Scheme, u.Host, shortenedPath)
+		us[longURL] = shortURL
+		return shortURL
+	} else {
+		return ""
+	}
 }
 
 func (us URLShortenerImpl) Resolve(shortURL string) string {
@@ -41,34 +51,6 @@ func (us URLShortenerImpl) Resolve(shortURL string) string {
 		}
 	}
 	return fmt.Sprintf("%s URL cannot be resolved: unknown URL", shortURL)
-}
-
-func (us URLShortenerImpl) addToKnown(rawUrl string) (string, error) {
-	u, err := url.Parse(rawUrl)
-	if err != nil {
-		return "", err
-	}
-
-	if len(u.Path) == 0 {
-		return "", fmt.Errorf("the provided URL has no path part to shorten")
-	}
-
-	if _, exist := us.alreadyExist(rawUrl); !exist {
-		shortenedPath := generateShortURL(rawUrl)
-		shortURL := fmt.Sprintf("%s://%s/%s", u.Scheme, u.Host, shortenedPath)
-		us[rawUrl] = shortURL
-		return shortURL, nil
-	} else {
-		return "", fmt.Errorf("URL %s was already shortened", rawUrl)
-	}
-}
-
-func (us URLShortenerImpl) alreadyExist(url string) (string, bool) {
-	if retVal, ok := us[url]; ok {
-		return retVal, ok
-	} else {
-		return "", false
-	}
 }
 
 func generateShortURL(long string) string {
