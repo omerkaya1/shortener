@@ -1,4 +1,4 @@
-package url_shortener
+package shortener
 
 import (
 	"crypto/md5"
@@ -30,7 +30,7 @@ func (us URLShortenerImpl) Shorten(longURL string) string {
 		return ""
 	}
 
-	if len(u.Path) == 0 {
+	if len(u.Path) == 0 || len(u.Scheme) == 0 || len(u.Host) == 0 {
 		return ""
 	}
 
