@@ -1,7 +1,6 @@
 package shortener
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -36,5 +35,5 @@ func TestURLShortenerImpl_Resolve(t *testing.T) {
 	us := GetURLShortener()
 	link := us.Shorten(longURLThree)
 	assert.Equal(t, longURLThree, us.Resolve(link))
-	assert.Equal(t, fmt.Sprintf("%s URL cannot be resolved: unknown URL", unknownShort), us.Resolve(unknownShort))
+	assert.Equal(t, "", us.Resolve(unknownShort))
 }
